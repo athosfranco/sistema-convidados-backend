@@ -65,7 +65,7 @@ app.get("/convidados/:id", (req, res) => __awaiter(void 0, void 0, void 0, funct
     }
 }));
 app.post("/convidados", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { nome, confirmado } = req.body;
+    const { nome, confirmado, dataCriacao, dataValidacao } = req.body;
     if (!nome || typeof confirmado !== "boolean") {
         return res
             .status(400)
@@ -74,8 +74,14 @@ app.post("/convidados", (req, res) => __awaiter(void 0, void 0, void 0, function
     const id = (0, uuid_1.v4)();
     const convidadoRef = (0, database_1.ref)(db, `convidados/${id}`);
     try {
-        yield (0, database_1.set)(convidadoRef, { id, nome, confirmado });
-        res.status(201).json({ id, nome, confirmado });
+        yield (0, database_1.set)(convidadoRef, {
+            id,
+            nome,
+            confirmado,
+            dataCriacao,
+            dataValidacao,
+        });
+        res.status(201).json({ id, nome, confirmado, dataCriacao, dataValidacao });
     }
     catch (error) {
         console.error("Erro ao criar convidado:", error);
@@ -84,13 +90,13 @@ app.post("/convidados", (req, res) => __awaiter(void 0, void 0, void 0, function
 }));
 app.put("/convidados/:id", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { id } = req.params;
-    const { nome, confirmado } = req.body;
+    const { nome, confirmado, dataValidacao } = req.body;
     const convidadoRef = (0, database_1.ref)(db, `convidados/${id}`);
     const convidadoSnapshot = yield (0, database_1.get)(convidadoRef);
     if (convidadoSnapshot.exists()) {
         try {
-            yield (0, database_1.update)(convidadoRef, { nome, confirmado });
-            res.json({ id, nome, confirmado });
+            yield (0, database_1.update)(convidadoRef, { nome, confirmado, dataValidacao });
+            res.json({ id, nome, confirmado, dataValidacao });
         }
         catch (error) {
             console.error("Erro ao atualizar convidado:", error);
@@ -111,7 +117,7 @@ function formatString(inputString) {
     return stringWithoutAccents.toLowerCase();
 }
 app.put("/confirmar-convidado", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { nome } = req.body;
+    const { nome, dataValidacao } = req.body;
     if (!nome) {
         return res.status(400).json({ message: "Nome é um campo obrigatório" });
     }
@@ -127,11 +133,14 @@ app.put("/confirmar-convidado", (req, res) => __awaiter(void 0, void 0, void 0, 
                 if (convidadoSnapshot.exists()) {
                     const convidado = convidadoSnapshot.val();
                     if (!convidado.confirmado) {
-                        yield (0, database_1.update)(convidadoRef, { confirmado: true });
-                        res.json({ message: "Convidado confirmado com sucesso" });
+                        yield (0, database_1.update)(convidadoRef, { confirmado: true, dataValidacao });
+                        res.json({
+                            user: convidado,
+                            message: "Convidado confirmado com sucesso",
+                        });
                     }
                     else {
-                        res.json({ message: "Convidado já confirmado" });
+                        res.json({ user: convidado, message: "Convidado já confirmado" });
                     }
                 }
                 else {

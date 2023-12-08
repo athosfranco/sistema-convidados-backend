@@ -56,7 +56,7 @@ app.get("/convidados/:id", async (req, res) => {
 });
 
 app.post("/convidados", async (req, res) => {
-  const { nome, confirmado } = req.body;
+  const { nome, confirmado, dataCriacao, dataValidacao } = req.body;
 
   if (!nome || typeof confirmado !== "boolean") {
     return res
@@ -68,8 +68,14 @@ app.post("/convidados", async (req, res) => {
   const convidadoRef = ref(db, `convidados/${id}`);
 
   try {
-    await set(convidadoRef, { id, nome, confirmado });
-    res.status(201).json({ id, nome, confirmado });
+    await set(convidadoRef, {
+      id,
+      nome,
+      confirmado,
+      dataCriacao,
+      dataValidacao,
+    });
+    res.status(201).json({ id, nome, confirmado, dataCriacao, dataValidacao });
   } catch (error) {
     console.error("Erro ao criar convidado:", error);
     res.status(500).json({ message: "Erro ao criar convidado" });
@@ -78,15 +84,15 @@ app.post("/convidados", async (req, res) => {
 
 app.put("/convidados/:id", async (req, res) => {
   const { id } = req.params;
-  const { nome, confirmado } = req.body;
+  const { nome, confirmado, dataValidacao } = req.body;
 
   const convidadoRef = ref(db, `convidados/${id}`);
   const convidadoSnapshot = await get(convidadoRef);
 
   if (convidadoSnapshot.exists()) {
     try {
-      await update(convidadoRef, { nome, confirmado });
-      res.json({ id, nome, confirmado });
+      await update(convidadoRef, { nome, confirmado, dataValidacao });
+      res.json({ id, nome, confirmado, dataValidacao });
     } catch (error) {
       console.error("Erro ao atualizar convidado:", error);
       res.status(500).json({ message: "Erro ao atualizar convidado" });
@@ -109,7 +115,7 @@ function formatString(inputString: string) {
 }
 
 app.put("/confirmar-convidado", async (req, res) => {
-  const { nome } = req.body;
+  const { nome, dataValidacao } = req.body;
 
   if (!nome) {
     return res.status(400).json({ message: "Nome é um campo obrigatório" });
@@ -133,10 +139,13 @@ app.put("/confirmar-convidado", async (req, res) => {
           const convidado = convidadoSnapshot.val();
 
           if (!convidado.confirmado) {
-            await update(convidadoRef, { confirmado: true });
-            res.json({ message: "Convidado confirmado com sucesso" });
+            await update(convidadoRef, { confirmado: true, dataValidacao });
+            res.json({
+              user: convidado,
+              message: "Convidado confirmado com sucesso",
+            });
           } else {
-            res.json({ message: "Convidado já confirmado" });
+            res.json({ user: convidado, message: "Convidado já confirmado" });
           }
         } else {
           res.status(404).json({ message: "Convidado não encontrado" });
